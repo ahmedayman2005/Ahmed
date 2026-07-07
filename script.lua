@@ -1513,96 +1513,68 @@ function changeEvent(currentId, farmId, targetId)
     local currentEvent = eve_searchs["Event " .. currentId]
     local farmEvent = eve_searchs["Event " .. farmId]
     local targetEvent = eve_searchs["Event " .. targetId]
-
+    
     local currentValues = nil
-    for _, v in ipairs(eve_values) do
-        if v.id == currentId then
-            currentValues = v.value
-        end
-    end
-
+    for _, v in ipairs(eve_values) do if v.id == currentId then currentValues = v.value end end
+    
     local targetValues = nil
-    for _, v in ipairs(eve_values) do
-        if v.id == targetId then
-            targetValues = v.value
-        end
-    end
+    for _, v in ipairs(eve_values) do if v.id == targetId then targetValues = v.value end end
 
-    if not farmEvent or not targetEvent or not currentValues or not targetValues then
-        gg.alert("خطأ: تأكد من إدخال IDs صحيحة")
-        return
+    if not farmEvent or not targetEvent or not currentValues or not targetValues then 
+        gg.alert("خطأ: تأكد من إدخال IDs صحيحة") return 
     end
-
+    
     gg.toast("❤️ صلي على النبي ❤️")
-
-    -- البحث عن الحدث الهدف
-    gg.clearResults()
-    gg.searchNumber(targetEvent.code, gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
-    gg.refineNumber(targetEvent.refine, gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
-
-    local targetResults = gg.getResults(100)
-
-    if #targetResults == 0 then
-        gg.alert("لم يتم العثور على الحدث الذي تريد الانتقال اليه 😐")
-        gg.clearResults()
-        return
-    end
-
-    -- التعديل الأول (Current Event)
-    local editsCurrent = {}
-    -- نحفظ التعديل الثاني (Target Event)
-    local editsTarget = {}
-
-    for i, res in ipairs(targetResults) do
-        local valIndex = ((i - 1) % 5) + 1
-
-        table.insert(editsCurrent, {
-            address = res.address,
-            value = currentValues[valIndex],
-            flags = gg.TYPE_DWORD
-        })
-
-        table.insert(editsTarget, {
-            address = res.address,
-            value = targetValues[valIndex],
-            flags = gg.TYPE_DWORD
-        })
-    end
-
-    -- تطبيق Current Event
-    gg.setValues(editsCurrent)
-
-    -- تصفير حدث المزرعة
     gg.clearResults()
     gg.searchNumber(farmEvent.code, gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
     gg.refineNumber(farmEvent.refine, gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
-
+    
     local farmResults = gg.getResults(100)
-
     if #farmResults > 0 then
         local edits = {}
-
-        for _, v in ipairs(farmResults) do
-            table.insert(edits, {
-                address = v.address,
-                value = 0,
+        for i, v in ipairs(farmResults) do
+            table.insert(edits, {address = v.address, value = 0, flags = gg.TYPE_DWORD})
+        end
+        gg.setValues(edits)
+    end
+    gg.clearResults()
+    
+    gg.searchNumber(targetEvent.code, gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
+    gg.refineNumber(targetEvent.refine, gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
+    
+    local targetResults = gg.getResults(100)
+    if #targetResults > 0 then
+        local editsCurrent = {}
+        for i, res in ipairs(targetResults) do
+            local valIndex = ((i - 1) % 5) + 1
+            table.insert(editsCurrent, {
+                address = res.address, 
+                value = currentValues[valIndex], 
                 flags = gg.TYPE_DWORD
             })
         end
-
-        gg.setValues(edits)
-    end
-
-    gg.clearResults()
-
-    local choice = gg.alert("تم التبديل بنجاح ✅️ أضغط حسنا لإنهاء العملية", "حسناً", "إلغاء")
-
-    if choice == 1 then
-        gg.setValues(editsTarget)
-        gg.toast("تم التبديل بنجاح ✅")
+        gg.setValues(editsCurrent)
+        
+        local choice = gg.alert("تم التبديل بنجاح ✅️ أضغط حسنا لإنهاء العملية ", "حسناً", "إلغاء")
+        if choice == 1 then
+            local editsTarget = {}
+            for i, res in ipairs(targetResults) do
+                local valIndex = ((i - 1) % 5) + 1
+                table.insert(editsTarget, {
+                    address = res.address, 
+                    value = targetValues[valIndex], 
+                    flags = gg.TYPE_DWORD
+                })
+            end
+            gg.setValues(editsTarget)
+            gg.toast("تم التبديل بنجاح ✅")
+        else
+            gg.toast("تم التبديل بنجاح ✅️")
+        end
     else
-        gg.toast("تم التبديل بنجاح ✅️")
+        gg.alert("لم يتم العثور على الحدث الذي تريد الانتقال اليه 😐")
     end
+    gg.clearResults()
 end
 
 
